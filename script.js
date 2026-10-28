@@ -129,10 +129,54 @@
     const frame=await loadImage(FRAME_SRC);ctx.drawImage(frame,0,0,FRAME.width,FRAME.height);
     return canvas;
   }
+  function canvasToBlob(canvas){
+    return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG conversion failed')),'image/png'));
+  }
+  function showSaveImageDialog(blob){
+    const url=URL.createObjectURL(blob);
+    const overlay=document.createElement('div');
+    overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(20,15,15,.85);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    const box=document.createElement('div');
+    box.style.cssText='background:#fffcee;border-radius:18px;padding:16px;max-width:440px;width:100%;max-height:94vh;overflow:auto;text-align:center;color:#5b4c46;font-family:system-ui,sans-serif;';
+    const title=document.createElement('p');title.textContent='Save your GLORY photo ✨';title.style.cssText='font-weight:700;margin:4px 0 10px;';
+    const help=document.createElement('p');help.textContent='iPhone / iPad: แตะรูปค้างไว้ แล้วเลือก Save to Photos / บันทึกไปยังรูปภาพ';help.style.cssText='font-size:13px;line-height:1.5;';
+    const img=document.createElement('img');img.src=url;img.alt='Your GLORY photo strip';img.style.cssText='display:block;max-width:100%;max-height:55vh;object-fit:contain;margin:auto;';
+    const open=document.createElement('a');open.href=url;open.target='_blank';open.rel='noopener';open.textContent='OPEN IMAGE';open.style.cssText='display:inline-block;margin:12px 8px;padding:10px 14px;border-radius:20px;background:#5b4c46;color:white;text-decoration:none;';
+    const close=document.createElement('button');close.type='button';close.textContent='CLOSE';close.style.cssText='padding:10px 14px;border-radius:20px;border:1px solid #5b4c46;background:white;color:#5b4c46;';
+    close.addEventListener('click',()=>{overlay.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+    box.append(title,help,img,open,close);overlay.appendChild(box);document.body.appendChild(overlay);
+  }
   async function downloadStrip(){
-    if(!sessionComplete)return;downloadBtn.disabled=true;downloadBtn.textContent='PREPARING…';
-    try{const canvas=await makeStripCanvas();const link=document.createElement('a');link.download='glory-photobooth.png';link.href=canvas.toDataURL('image/png');document.body.appendChild(link);link.click();link.remove();setMessage('Downloaded! Your GLORY photo strip is saved to your device.');}
-    catch(error){console.error(error);setMessage('Could not export the strip. Please try again in a recent browser.');}
+    if(!sessionComplete)return;
+    downloadBtn.disabled=true;downloadBtn.textContent='PREPARING…';
+    try{
+      const canvas=await makeStripCanvas();
+      const blob=await canvasToBlob(canvas);
+      const file=new File([blob],'glory-photobooth.png',{type:'image/png'});
+      const mobile=/iPad|iPhone|iPod|Android/i.test(navigator.userAgent)||
+        (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+      if(mobile && navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({files:[file],title:'GLORY Photobooth'});
+          setMessage('เลือก Save Image / Save to Files ในเมนูแชร์เพื่อบันทึกรูป');
+          return;
+        }catch(err){
+          if(err.name==='AbortError'){setMessage('ยกเลิกการแชร์รูปแล้ว');return;}
+          console.warn('Share failed; showing image save option',err);
+        }
+      }
+      if(mobile){
+        showSaveImageDialog(blob);
+        setMessage('แตะรูปค้างไว้เพื่อบันทึกภาพ หรือเลือก OPEN IMAGE');
+      }else{
+        const url=URL.createObjectURL(blob);
+        const link=document.createElement('a');link.download='glory-photobooth.png';link.href=url;
+        document.body.appendChild(link);link.click();link.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),60000);
+        setMessage('Downloaded! Your GLORY photo strip is saved to your device.');
+      }
+    }catch(error){console.error(error);setMessage('Could not export the strip. Please try again in a recent browser.');}
     finally{downloadBtn.textContent='DOWNLOAD PHOTO STRIP ↓';downloadBtn.disabled=!sessionComplete;}
   }
   function resetSession(){shots=[];sessionComplete=false;renderPreview();downloadBtn.classList.add('hidden');retakeBtn.classList.add('hidden');setMessage('Ready for a fresh set! Press TAKE PHOTOS.');updateControls();}
