@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fffcee">
+  <title>GLORY — Photobooth</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section class="landing" id="gloryLanding" aria-label="GLORY welcome screen">
+    <img class="homepage-camera-sticker" src="assets/camera-homepage.png" alt="PHOTObooth">
+    <img class="landing-art" src="assets/glory-logo.png" alt="GLORY X Team MaHaLNWkanekiken">
+    <div class="landing-action">
+      <div class="loading-track" id="loadingTrack" role="progressbar" aria-label="Loading GLORY" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="loadingFill"></span></div>
+      <p id="loadingCaption">GETTING YOUR MOMENT READY…</p>
+      <button id="glowButton" class="glow-button hidden" type="button" aria-label="Let's Glow"><img src="assets/lets-glow-button.png" alt="LET'S GLOW !!"></button>
+    </div>
+  </section>
+
+  <main id="boothApp" class="booth hidden">
+    <header class="booth-header">
+      <div class="buddy-title" aria-label="UR GLOWY BUDDY"><span>U</span><span>R</span><i aria-hidden="true"></i><span>G</span><span>L</span><span>O</span><span>W</span><span>Y</span><i aria-hidden="true"></i><span>B</span><span>U</span><span>D</span><span>D</span><span>Y</span></div>
+    </header>
+    <section class="studio" aria-label="Photobooth studio">
+      <div class="camera-column">
+        <img class="camera-heading" src="assets/camera-heading.png" alt="Camera">
+        <div class="camera-frame">
+          <video id="camera" autoplay playsinline muted></video>
+          <div class="camera-placeholder" id="cameraPlaceholder"><span class="camera-symbol">◎</span><strong>Your camera goes here</strong><small>Enable your camera to get started</small></div>
+          <div id="countdown" class="countdown hidden" aria-live="assertive">3</div>
+          <div class="camera-status" id="cameraStatus">CAMERA OFF</div>
+        </div>
+        <div class="camera-actions">
+          <button id="startCameraBtn" class="small-button" type="button">ENABLE CAMERA</button>
+          <button id="captureBtn" class="small-button primary" type="button" disabled>TAKE PHOTOS</button>
+        </div>
+        <p id="message" class="message" role="status" aria-live="polite">Allow camera access to begin.</p>
+      </div>
+      <aside class="preview-column">
+        <div class="strip-preview" id="stripPaper" aria-label="Photo strip preview">
+          <div class="strip-photos" id="stripPhotos">
+            <div class="photo-slot"></div><div class="photo-slot"></div><div class="photo-slot"></div>
+          </div>
+          <img class="frame-overlay" id="frameOverlay" src="assets/frames/glory-original.png" alt="GLORY original photo frame">
+        </div>
+      </aside>
+    </section>
+    <div class="bottom-actions">
+      <img class="team-logo" src="assets/glory-team-logo.png" alt="GLORY X Team MaHaLNWkanekiken">
+      <button id="downloadBtn" class="download-button hidden" type="button" disabled>DOWNLOAD PHOTO STRIP ↓</button>
+      <button id="retakeBtn" class="retake-button hidden" type="button" disabled>RETAKE</button>
+    </div>
+    <p class="privacy-note">Your photos stay in this browser. Nothing is uploaded.</p>
+  </main>
+
+  <div class="modal-backdrop hidden" id="warningModal" role="dialog" aria-modal="true" aria-label="Skin battery warning">
+    <div class="custom-popup">
+      <img class="popup-art" src="assets/popup-warning.png" alt="WARNING — you have low skin battery. Please recharge ur skin battery">
+      <button class="popup-image-button" id="warningNext" type="button" aria-label="Next"><img src="assets/popup-next.png" alt="NEXT →"></button>
+    </div>
+  </div>
+  <div class="modal-backdrop hidden" id="resultModal" role="dialog" aria-modal="true" aria-label="NEO SKIN MAX glowy buddy">
+    <div class="custom-popup">
+      <img class="popup-art" src="assets/popup-buddy.png" alt="WARNING — Let's NEO SKIN MAX be ur GLOWY BUDDY">
+      <button class="popup-image-button popup-photo-button" id="resultContinue" type="button" aria-label="Go to photobooth"><img src="assets/popup-photobooth.png" alt="GO TO PHOTOBOOTH"></button>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
