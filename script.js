@@ -18,11 +18,25 @@
   const stripPhotos = document.getElementById('stripPhotos');
   const frameOverlay = document.getElementById('frameOverlay');
   const message = document.getElementById('message');
+  const framePicker = document.getElementById('framePicker');
   const SHOT_COUNT = 3;
   const LOADING_DURATION = 2600;
   const COUNTDOWN_SECONDS = 3;
-  const FRAME_SRC = 'assets/frames/glory-original.png';
-  const FRAME = { width:910, height:2048, x:114, slotWidth:682, slotHeight:443, y:[106,596,1085] };
+  const FRAMES = {
+    original: {
+      name: 'GLORY',
+      src: 'assets/frames/glory-original.png',
+      width: 910, height: 2048,
+      slots: [{x:114,y:106,w:682,h:443},{x:114,y:596,w:682,h:443},{x:114,y:1085,w:682,h:443}]
+    },
+    diva: {
+      name: 'DIVA',
+      src: 'assets/frames/glory-frame-02.png',
+      width: 910, height: 2048,
+      slots: [{x:115,y:94,w:681,h:453},{x:115,y:593,w:681,h:443},{x:115,y:1083,w:681,h:442}]
+    }
+  };
+  let selectedFrame = 'original';
   let stream = null;
   let shots = [];
   let running = false;
@@ -101,6 +115,32 @@
     }catch(error){console.error(error);setMessage('Something went wrong while taking photos. Please try again.');}
     finally{running=false;startCameraBtn.disabled=!!stream;updateControls();}
   }
+  function applySelectedFrame(){
+    const frame = FRAMES[selectedFrame];
+    frameOverlay.src = frame.src;
+    frameOverlay.alt = `${frame.name} photo frame`;
+    const slots = stripPhotos.querySelectorAll('.photo-slot');
+    slots.forEach((slot, i) => {
+      const s = frame.slots[i];
+      slot.style.left = `${s.x / frame.width * 100}%`;
+      slot.style.top = `${s.y / frame.height * 100}%`;
+      slot.style.width = `${s.w / frame.width * 100}%`;
+      slot.style.height = `${s.h / frame.height * 100}%`;
+    });
+    framePicker.querySelectorAll('.frame-option').forEach(button => {
+      const active = button.dataset.frame === selectedFrame;
+      button.classList.toggle('is-selected', active);
+      button.setAttribute('aria-pressed', String(active));
+      button.disabled = shots.length > 0 || sessionComplete || running;
+    });
+  }
+  framePicker.addEventListener('click', event => {
+    const button = event.target.closest('.frame-option');
+    if (!button || button.disabled || !FRAMES[button.dataset.frame]) return;
+    selectedFrame = button.dataset.frame;
+    applySelectedFrame();
+  });
+
   function renderPreview(){
     stripPhotos.innerHTML='';
     for(let i=0;i<SHOT_COUNT;i++){
@@ -108,6 +148,7 @@
       if(shots[i]){const img=document.createElement('img');img.src=shots[i];img.alt=`Photo ${i+1}`;slot.appendChild(img);}
       stripPhotos.appendChild(slot);
     }
+    applySelectedFrame();
     updateControls();
   }
   function updateControls(){
@@ -117,16 +158,17 @@
   }
   function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error(`Could not load image: ${src}`));img.src=src;});}
   async function makeStripCanvas(){
-    const canvas=document.createElement('canvas');canvas.width=FRAME.width;canvas.height=FRAME.height;
+    const frameSpec=FRAMES[selectedFrame];
+    const canvas=document.createElement('canvas');canvas.width=frameSpec.width;canvas.height=frameSpec.height;
     const ctx=canvas.getContext('2d');
     for(let i=0;i<SHOT_COUNT;i++){
       const img=await loadImage(shots[i]);
-      const x=FRAME.x,y=FRAME.y[i],w=FRAME.slotWidth,h=FRAME.slotHeight;
+      const {x,y,w,h}=frameSpec.slots[i];
       const target=w/h, source=img.width/img.height;let sx=0,sy=0,sw=img.width,sh=img.height;
       if(source>target){sw=img.height*target;sx=(img.width-sw)/2;}else{sh=img.width/target;sy=(img.height-sh)/2;}
       ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip(); ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h); ctx.restore();
     }
-    const frame=await loadImage(FRAME_SRC);ctx.drawImage(frame,0,0,FRAME.width,FRAME.height);
+    const frame=await loadImage(frameSpec.src);ctx.drawImage(frame,0,0,frameSpec.width,frameSpec.height);
     return canvas;
   }
   function canvasToBlob(canvas){
@@ -179,7 +221,7 @@
     }catch(error){console.error(error);setMessage('Could not export the strip. Please try again in a recent browser.');}
     finally{downloadBtn.textContent='DOWNLOAD PHOTO STRIP ↓';downloadBtn.disabled=!sessionComplete;}
   }
-  function resetSession(){shots=[];sessionComplete=false;renderPreview();downloadBtn.classList.add('hidden');retakeBtn.classList.add('hidden');setMessage('Ready for a fresh set! Press TAKE PHOTOS.');updateControls();}
+  function resetSession(){shots=[];sessionComplete=false;renderPreview();applySelectedFrame();downloadBtn.classList.add('hidden');retakeBtn.classList.add('hidden');setMessage('Ready for a fresh set! Press TAKE PHOTOS.');updateControls();}
   startCameraBtn.addEventListener('click',enableCamera);
   captureBtn.addEventListener('click',runSession);
   downloadBtn.addEventListener('click',downloadStrip);
